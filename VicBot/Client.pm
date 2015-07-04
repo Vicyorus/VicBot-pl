@@ -122,7 +122,7 @@ sub post{
   $uri->query_form( $self->{'request_data'} );
   
   print Dumper($self->{'request_data'}) . "\n";
-  my $response = $self->{'opener'}->post($uri, $body);
+  my $response = $self->{'opener'}->post($uri, 'Content' => $body);
 
   print $response->status_line . "\n";
   if ( $response->is_success() ) {
@@ -175,21 +175,27 @@ sub run {
   my ($self) = @_;
   while (1){
     post($self, "2");
-    get($self);
+    #get($self);
     #sleep $self->{'interval'};
   }
 }
 
 sub int_to_encode {
+  
+  # This function returns a string starting with char 00, followed
+  # by the encoded digits of the length of the message we're going to send,
+  # and ending with char FF. Required because Wikia likes to fuck things up.
+  # An example would be "\00\01\ff" for a message whose length is 1.
+  
   my ($len) = @_;
   
-  my $final = "";
+  my $final = '';
   
   foreach my $num (split //, "$len"){
     $final .= chr($num);
   }
   
-  return "\x00$final\xff";
+  return '\00'. $final . '\ff';
   
 }
 
