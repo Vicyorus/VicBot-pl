@@ -1,4 +1,8 @@
+##############################################################################
+##############################################################################
+
 package VicBot::API;
+
 use strict;
 use warnings;
 use diagnostics;
@@ -23,6 +27,7 @@ sub new{
     'timeout' => 60
   );
   
+  # Create the requests handler
   $self->{'ua'} = LWP::UserAgent->new( %headers );
   
   #Set a copy of the cookies, extremely useful for later requests
@@ -32,9 +37,16 @@ sub new{
   return $self;  
 }
 
+
 sub login{
+  # login: Logs the given user to the MediaWiki API
+  # params:
+  # $user (string): The user name
+  # $password (string): The user's password
+  
   my ($self, $user, $password) = @_;
   
+  # Set the 
   my $settings = {
     'action' => 'login',
     'lgname' => $user,
@@ -46,15 +58,16 @@ sub login{
 
   my $response = $self->{'ua'}->post($self->{'uri'});
   my $data = decode_json( encode( "utf8", $response->decoded_content() ) );
-
+  
+  # Get the login token
   $settings->{'lgtoken'} = $data->{'login'}{'token'};
   $self->{'uri'}->query_form($settings);
- 
+  
   $response = $self->{'ua'}->post($self->{'uri'});
 
   $data = decode_json($response->decoded_content());
 
-  if ($data->{'login'}{'result'} eq 'Success'){
+  if ($data->{'login'}{'result'} eq 'Success') {
     print "Logged in to wiki!\n";
   } else {
     die "An error occurred: $data->{'login'}{'result'}\n";
@@ -62,16 +75,16 @@ sub login{
 
 }
 
-sub logout{}
+sub logout{
+}
 
-sub tokens{}
+sub tokens{
+}
 
-sub block{}
+sub raw_page{
+}
 
-sub unblock{}
-
-sub raw_page{}
-
-sub save_page{}
+sub save_page{
+}
 
 1;
