@@ -16,6 +16,7 @@ use Switch;
 use FindBin;
 use Data::Dumper;
 use String::Escape qw(printable);
+use threads;
 
 #Chat-related modules
 use VicBot::API;
@@ -91,7 +92,6 @@ sub get{
 
   my $response = $self->{'opener'}->get($uri);
 
-  print $response->status_line . "\n";
   if ( $response->is_success() ) {
     $t += 1;
     return $response->decoded_content();
@@ -107,13 +107,12 @@ sub post{
   my $time = time;
 
   if ($body eq "2") {
-    $body = int_to_encode(length $body) . $body;
+    $body = "1:2";
   }
   
   # ERROR:
   # This, in theory, should print \00\01\ff2, which is defined as the "ping message",
   # however, it seems to be malformed in some way, which is the error I can't find.
-  print printable($body) . "\n";
  
   # Set the time
   $self->{'request_data'}{'time_cachebuster'} = "$time-$t";
@@ -121,13 +120,11 @@ sub post{
   my $uri = URI->new( $self->{'chat_url'} );
   $uri->query_form( $self->{'request_data'} );
   
-  print Dumper($self->{'request_data'}) . "\n";
   my $response = $self->{'opener'}->post($uri, 'Content' => $body);
 
-  print $response->status_line . "\n";
   if ( $response->is_success() ) {
     $t += 1;
-    print $response->decoded_content() . "\n";
+    return $response->decoded_content();
   } else {
     warn "An error occurred: $@";
     exit(1)
@@ -173,31 +170,19 @@ sub set_sid {
 
 sub run {
   my ($self) = @_;
+  my $ping_thr = threads->create('ping', $self);
+  $ping_thr->detach();
   while (1){
+    print get($self) . "\n";
+  }
+}
+
+sub ping {
+  my ($self) = @_;
+  
+  while (1) {
     post($self, "2");
-    #get($self);
-    #sleep $self->{'interval'};
+    sleep $self->{'interval'};
   }
 }
-
-sub int_to_encode {
-  
-  # This function returns a string starting with char 00, followed
-  # by the encoded digits of the length of the message we're going to send,
-  # and ending with char FF. Required because Wikia likes to fuck things up.
-  # An example would be "\00\01\ff" for a message whose length is 1.
-  
-  my ($len) = @_;
-  
-  my $final = '';
-  
-  foreach my $num (split //, "$len"){
-    $final .= chr($num);
-  }
-  
-  return '\00'. $final . '\ff';
-  
-}
-
-
 1;

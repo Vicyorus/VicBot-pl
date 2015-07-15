@@ -1,0 +1,10 @@
+# Ignore the configuration file
+config.ini
+
+# And all the json files generated
+*.json
+
+# And the chatlog file
+chat.log
+
+.directory
